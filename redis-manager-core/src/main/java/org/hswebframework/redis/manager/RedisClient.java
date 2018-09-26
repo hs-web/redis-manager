@@ -3,6 +3,7 @@ package org.hswebframework.redis.manager;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.hswebframework.redis.manager.codec.CodecType;
 
 import java.util.Map;
 
@@ -32,15 +33,17 @@ public class RedisClient {
 
     private int database = 0;
 
-    private Map<String, EncodeDecodeConfig> encodeDecodeConfig;
+    private Map<String, CodecConfig> encodeDecodeConfig;
 
     @Getter
     @Setter
     @EqualsAndHashCode
-    public static class EncodeDecodeConfig {
-        private String decoder;
+    public static class CodecConfig {
+        private CodecType keyCodec = CodecType.string;
 
-        private String encoder;
+        private CodecType valueCodec = CodecType.string;
     }
+
+
 
 }

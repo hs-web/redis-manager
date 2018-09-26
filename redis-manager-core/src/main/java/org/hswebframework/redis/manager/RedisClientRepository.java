@@ -1,6 +1,7 @@
 package org.hswebframework.redis.manager;
 
 import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.Codec;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ public interface RedisClientRepository {
 
     RedisClient findById(String clientId);
 
-    RedissonClient getRedissonClientClient(String id);
+    RedissonClient getRedissonClient(String id);
 
+    Codec getCodec(String clientId,String key);
 }
