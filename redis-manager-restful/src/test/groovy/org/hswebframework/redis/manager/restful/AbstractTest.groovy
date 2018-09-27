@@ -30,7 +30,7 @@ class AbstractTest extends Specification {
     @Shared
     protected RedisClientRepository repository;
 
-    void setup() {
+    def setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
         repository = context.getBean(RedisClientRepository.class);
     }
