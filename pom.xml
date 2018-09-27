@@ -203,6 +203,9 @@
                 <configuration>
                     <includes>
                         <include>
+                            **/org/hswebframework/**/*Test.java
+                        </include>
+                        <include>
                             **/org/hswebframework/**/*Tests.java
                         </include>
                     </includes>
