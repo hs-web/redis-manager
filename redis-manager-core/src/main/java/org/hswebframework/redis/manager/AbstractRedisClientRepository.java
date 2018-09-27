@@ -1,22 +1,22 @@
 package org.hswebframework.redis.manager;
 
+import io.vavr.Lazy;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hswebframework.redis.manager.codec.CodecClassLoader;
 import org.redisson.Redisson;
+import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.Codec;
+import org.redisson.client.codec.StringCodec;
 import org.redisson.client.protocol.Decoder;
 import org.redisson.client.protocol.Encoder;
 import org.redisson.config.Config;
 
 import java.io.File;
-import java.net.MalformedURLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * @author zhouhao
@@ -39,34 +39,32 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
     }
 
     @Override
-    public RedissonClient getRedissonClient(String id) {
+    public RedissonClient getRedissonClient(String id, int database) {
+        return getCache(id).getClient(database);
+    }
+
+    protected void updateCodec(String clientId, Map<String, RedisClient.CodecConfig> configMap) {
+        if (clientMap.get(clientId) != null) {
+            getCache(clientId).reloadCodec(configMap);
+        }
+    }
+
+    protected Cache getCache(String id) {
         RedisClient client = findById(id);
         Objects.requireNonNull(client, "客户端不存在");
-
         Cache cache = clientMap.get(id);
-        if (cache == null || cache.hash != client.hashCode()) {
+        if (cache == null || !cache.clientConf.equals(client)) {
             if (cache != null) {
-                try {
-                    cache.client.shutdown();
-                } catch (Exception e) {
-                    //ignore errors
-                    log.error("停止redis客户端失败", e);
-                }
+                cache.close();
             }
             cache = createCache(client);
             clientMap.put(id, cache);
         }
-        return cache.client;
+        return cache;
     }
 
     protected Cache createCache(RedisClient client) {
-        Config config = new Config();
-        config.useSingleServer()
-                .setAddress(client.getAddress())
-                .setDatabase(client.getDatabase());
-
         Cache cache = new Cache();
-        cache.client = Redisson.create(config);
         cache.init(client);
         return cache;
     }
@@ -78,21 +76,80 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
                 .orElseThrow(NullPointerException::new);
     }
 
+    @Override
+    public int databases(String id) {
+        return getCache(id).databases;
+    }
+
     class Cache {
-        private long hash;
+
+        private RedisClient clientConf;
+
+        private int databases;
+
+        private Set<Integer> initDatabases = new HashSet<>();
 
         private Map<String, Codec> codecMap = new HashMap<>();
 
-        private RedissonClient client;
+        private List<Supplier<RedissonClient>> clients = new ArrayList<>();
 
         private Codec defaultCodec = createCodec(new RedisClient.CodecConfig());
 
-        public void init(RedisClient redisClient) {
-            this.hash = redisClient.hashCode();
-            if (redisClient.getEncodeDecodeConfig() != null) {
-                for (Map.Entry<String, RedisClient.CodecConfig> entry : redisClient.getEncodeDecodeConfig().entrySet()) {
-                    codecMap.put(entry.getKey(), createCodec(entry.getValue()));
+        public void close() {
+            for (Integer database : initDatabases) {
+                try {
+                    getClient(databases).shutdown();
+                } catch (Exception e) {
+                    log.error("停止redis[{}]:[{}]客户端失败", clientConf, database, e);
                 }
+            }
+        }
+
+        public RedissonClient getClient(int databases) {
+            return clients.get(databases).get();
+        }
+
+        public void reloadCodec(Map<String, RedisClient.CodecConfig> configMap) {
+            codecMap.clear();
+            for (Map.Entry<String, RedisClient.CodecConfig> entry : configMap.entrySet()) {
+                codecMap.put(entry.getKey(), createCodec(entry.getValue()));
+            }
+        }
+
+        public void init(RedisClient redisClient) {
+            if (redisClient.getCodecConfig() != null) {
+                reloadCodec(redisClient.getCodecConfig());
+            }
+            this.clientConf = redisClient;
+            Config firstDatabaseConfig = new Config();
+            firstDatabaseConfig.useSingleServer()
+                    .setPassword(redisClient.getPassword())
+                    .setAddress(redisClient.getAddress())
+                    .setDatabase(0);
+            RedissonClient redissonClient = Redisson.create(firstDatabaseConfig);
+            clients.add(0, () -> redissonClient);
+            List<Object> data = redissonClient
+                    .getScript()
+                    .eval(RScript.Mode.READ_ONLY,
+                            StringCodec.INSTANCE,
+                            "return redis.call('config','get','databases')",
+                            RScript.ReturnType.MULTI);
+            this.databases = Integer.parseInt(String.valueOf(data.get(1)));
+
+            for (int i = 1; i < this.databases; i++) {
+                int fi = i;
+                @SuppressWarnings("all")
+                Supplier<RedissonClient> supplier = Lazy.val(() -> {
+                    Config config = new Config();
+                    config.useSingleServer()
+                            .setPassword(redisClient.getPassword())
+                            .setAddress(redisClient.getAddress())
+                            .setDatabase(fi);
+                    RedissonClient client = Redisson.create(config);
+                    initDatabases.add(fi);
+                    return (Supplier<RedissonClient>) () -> client;
+                }, Supplier.class);
+                clients.add(i, supplier);
             }
         }
 
@@ -141,6 +198,5 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
             }
         };
     }
-
 
 }

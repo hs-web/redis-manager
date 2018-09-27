@@ -32,7 +32,15 @@ public class RedisClientManagerApi {
         return ResponseMessage.ok(redisClientRepository.allClients());
     }
 
-    @PatchMapping
+
+    @GetMapping("/{clientId}/databases")
+    @ApiOperation("获取数据库数量")
+    @Authorize(action = Permission.ACTION_GET)
+    public ResponseMessage<Integer> getDatabases(@PathVariable String clientId) {
+        return ResponseMessage.ok(redisClientRepository.databases(clientId));
+    }
+
+    @PatchMapping("/client")
     @ApiOperation("新增或者修改客户端信息")
     @Authorize(action = Permission.ACTION_GET)
     public ResponseMessage<RedisClient> saveOrUpdate(@RequestBody RedisClient client) {

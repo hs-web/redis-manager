@@ -15,18 +15,23 @@ public class StringOperationApi {
 
 
     @Autowired
-    RedisClientRepository repository;
+    private RedisClientRepository repository;
 
-    @GetMapping("/{clientId}/get/{key}")
-    public ResponseMessage<Object> getValue(@PathVariable String clientId, @PathVariable String key) {
-        return ok(repository.getRedissonClient(clientId)
+    @GetMapping("/{clientId}/{database}/get/{key}")
+    public ResponseMessage<Object> getValue(@PathVariable String clientId,
+                                            @PathVariable int database,
+                                            @PathVariable String key) {
+        return ok(repository.getRedissonClient(clientId, database)
                 .getBucket(key, repository.getCodec(clientId, key))
                 .get());
     }
 
-    @PutMapping("/{clientId}/set/{key}")
-    public ResponseMessage<Void> setValue(@PathVariable String clientId, @PathVariable String key, @RequestBody String jsonRequest) {
-        repository.getRedissonClient(clientId)
+    @PutMapping("/{clientId}/{database}/set/{key}")
+    public ResponseMessage<Void> setValue(@PathVariable String clientId,
+                                          @PathVariable int database,
+                                          @PathVariable String key,
+                                          @RequestBody String jsonRequest) {
+        repository.getRedissonClient(clientId, database)
                 .getBucket(key, repository.getCodec(clientId, key))
                 .set(jsonRequest);
         return ok();

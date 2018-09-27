@@ -31,9 +31,9 @@ public class RedisClient {
     //服务端地址
     private String address = "redis://localhost:6379";
 
-    private int database = 0;
+    private String password;
 
-    private Map<String, CodecConfig> encodeDecodeConfig;
+    private Map<String, CodecConfig> codecConfig;
 
     @Getter
     @Setter
@@ -43,7 +43,5 @@ public class RedisClient {
 
         private CodecType valueCodec = CodecType.string;
     }
-
-
 
 }

@@ -2,28 +2,24 @@ package org.hswebframework.redis.manager.restful;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import org.hswebframework.redis.manager.RedisClientRepository;
 import org.hswebframework.redis.manager.restful.mode.KeyModel;
-import org.hswebframework.web.NotFoundException;
 import org.hswebframework.web.authorization.annotation.Authorize;
 import org.hswebframework.web.authorization.annotation.Logical;
 import org.hswebframework.web.controller.message.ResponseMessage;
-import org.hswebframework.web.id.IDGenerator;
-import org.redisson.Redisson;
 import org.redisson.api.RKeys;
 import org.redisson.api.RScript;
 import org.redisson.client.codec.StringCodec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.hswebframework.web.controller.message.ResponseMessage.*;
+import static org.hswebframework.web.controller.message.ResponseMessage.ok;
 
 /**
  * @author zhouhao
@@ -38,101 +34,79 @@ public class KeysOperationApi {
     @Autowired
     private RedisClientRepository repository;
 
-    @Autowired
-    private Map<String, KeysSession> rKeysMap = new HashMap<>();
 
-    @Getter
-    @AllArgsConstructor
-    private class KeysSession {
-        RKeys keys;
-        String clientId;
+    private RKeys getRkeys(String clientId, int database) {
+        return repository.getRedissonClient(clientId, database)
+                .getKeys();
     }
 
-    private RKeys getRkeys(String sessionId) {
-        return Optional.ofNullable(rKeysMap.get(sessionId))
-                .map(KeysSession::getKeys)
-                .orElseThrow(NotFoundException::new);
-    }
-
-    @PostMapping("{clientId}/keys/open-session")
-    @Authorize(action = {"keys", "*"}, logical = Logical.OR)
-    @ApiOperation("打开一个session")
-    public ResponseMessage<String> openSession(@PathVariable String clientId) {
-        String sessionId = IDGenerator.MD5.generate();
-        rKeysMap.put(sessionId, new KeysSession(repository.getRedissonClient(clientId).getKeys(), clientId));
-        return ok(sessionId);
-    }
-
-    @DeleteMapping("/keys/{sessionId}/close-session")
-    @Authorize(action = {"keys", "*"}, logical = Logical.OR)
-    @ApiOperation("结束一个session")
-    public ResponseMessage<Void> closeSession(@PathVariable String sessionId) {
-        rKeysMap.remove(sessionId);
-        return ok();
-    }
-
-    @GetMapping("/keys/{sessionId}/total")
+    @GetMapping("/{clientId}/{database}/keys/total")
     @Authorize(action = {"keys", "*"}, logical = Logical.OR)
     @SuppressWarnings("all")
     @ApiOperation("获取key总数")
-    public ResponseMessage<Long> totalKeys(@PathVariable String sessionId) {
-
-        return ok(getRkeys(sessionId).count());
+    public ResponseMessage<Long> totalKeys(@PathVariable String clientId,
+                                           @PathVariable int database) {
+        return ok(getRkeys(clientId, database).count());
     }
 
-    @GetMapping("/keys/{sessionId}/{count}")
+    @GetMapping("/{clientId}/{database}/keys")
     @Authorize(action = {"keys", "*"}, logical = Logical.OR)
     @SuppressWarnings("all")
     @ApiOperation("获取指定数量的keys")
-    public ResponseMessage<List<KeyModel>> keys(@PathVariable String sessionId,
-                                                @PathVariable int count) {
-        return ok(StreamSupport.stream(getRkeys(sessionId)
-                .getKeys(count)
+    public ResponseMessage<List<KeyModel>> keys(@PathVariable String clientId,
+                                                @PathVariable int database) {
+        return ok(StreamSupport.stream(getRkeys(clientId, database)
+                .getKeys()
                 .spliterator(), true)
-                .map(key -> createModel(sessionId, key))
+                .map(key -> createModel(clientId, database, key))
                 .collect(Collectors.toList()));
     }
 
-    @GetMapping("/keys/{sessionId}/{count}/{pattern:.*}")
+    @GetMapping("/{clientId}/{database}/keys/{pattern:.*}")
     @Authorize(action = {"keys", "*"}, logical = Logical.OR)
     @SuppressWarnings("all")
     @ApiOperation("获取指定数量以及规则的keys")
-    public ResponseMessage<List<KeyModel>> keysByPattern(@PathVariable String sessionId,
-                                                         @PathVariable String pattern,
-                                                         @PathVariable int count) {
-        return ok(StreamSupport.stream(getRkeys(sessionId)
-                .getKeysByPattern(pattern, count)
+    public ResponseMessage<List<KeyModel>> keysByPattern(@PathVariable String clientId,
+                                                         @PathVariable int database,
+                                                         @PathVariable String pattern) {
+        return ok(StreamSupport.stream(getRkeys(clientId, database)
+                .getKeysByPattern(pattern)
                 .spliterator(), true)
-                .map(key -> createModel(sessionId, key))
+                .map(key -> createModel(clientId, database, key))
                 .collect(Collectors.toList()));
     }
 
-    @DeleteMapping("/keys/{sessionId}/{pattern:.*}")
+    @DeleteMapping("/{clientId}/{database}/keys/{pattern:.*}")
     @Authorize(action = {"delete", "*"}, logical = Logical.OR)
     @SuppressWarnings("all")
     @ApiOperation("删除指定规则的key")
-    public ResponseMessage<Long> deleteKey(@PathVariable String sessionId,
+    public ResponseMessage<Long> deleteKey(@PathVariable String clientId,
+                                           @PathVariable int database,
                                            @PathVariable String pattern) {
-        return ok(getRkeys(sessionId)
-                .deleteByPattern(pattern));
+        return ok(getRkeys(clientId, database).deleteByPattern(pattern));
     }
 
 
-    @DeleteMapping("/keys/{sessionId}/expire/{key:.*}/{seconds}")
+    @DeleteMapping("/{clientId}/{database}/keys/expire/{key:.*}/{seconds}")
     @Authorize(action = {"delete", "*"}, logical = Logical.OR)
     @SuppressWarnings("all")
     @ApiOperation("设置key过期")
     public ResponseMessage<Boolean> expireKey(@PathVariable String clientId,
+                                              @PathVariable int database,
                                               @PathVariable String key,
                                               @PathVariable long seconds) {
-        return ok(repository.getRedissonClient(clientId)
+        if (seconds < 0) {
+            return ok(repository.getRedissonClient(clientId, database)
+                    .getKeys()
+                    .clearExpire(key));
+        }
+        return ok(repository.getRedissonClient(clientId, database)
                 .getKeys()
                 .expire(key, seconds, TimeUnit.SECONDS));
     }
 
-    private KeyModel createModel(String sessionId, String key) {
-        List<String> typeAndTTl = repository.getRedissonClient(rKeysMap.get(sessionId)
-                .clientId)
+    private KeyModel createModel(String clientId, int database, String key) {
+        List<String> typeAndTTl = repository.getRedissonClient(clientId, database)
                 .getScript()
                 .eval(RScript.Mode.READ_ONLY,
                         StringCodec.INSTANCE,

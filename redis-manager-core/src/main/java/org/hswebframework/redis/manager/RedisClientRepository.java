@@ -17,7 +17,9 @@ public interface RedisClientRepository {
 
     RedisClient findById(String clientId);
 
-    RedissonClient getRedissonClient(String id);
+    int databases(String id);
+
+    RedissonClient getRedissonClient(String id,int database);
 
     Codec getCodec(String clientId,String key);
 }
