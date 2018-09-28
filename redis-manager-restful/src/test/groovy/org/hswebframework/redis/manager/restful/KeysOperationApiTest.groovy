@@ -2,6 +2,8 @@ package org.hswebframework.redis.manager.restful
 
 import com.alibaba.fastjson.JSON
 import spock.lang.Shared
+import spock.lang.Subject
+import spock.lang.Title
 
 import java.util.concurrent.TimeUnit
 
@@ -13,6 +15,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author zhouhao
  * @since 1.0.0
  */
+@Title("redis key相关操作测试")
+@Subject(KeysOperationApi)
+
 class KeysOperationApiTest extends AbstractTestSupport {
 
     def database = 10;
@@ -32,7 +37,59 @@ class KeysOperationApiTest extends AbstractTestSupport {
         println("delete keys ${total}")
     }
 
+    def "测试del功能"() {
+        given: "执行del redis-manager:test:* 操作"
+        def hlen = delete("/redis/manager/{clientId}/{database}/keys/{pattern}", "default", database, "redis-manager:test:*")
+        def result = mockMvc
+                .perform(hlen)
+                .andExpect(status().is(200))
+                .andReturn()
+                .getResponse()
+                .getContentAsString()
+        when: "返回成功"
+        JSON.parseObject(result).getInteger("status") == 200;
+        then: "获取现有数据"
+        def client = repository.getRedissonClient("default", database);
+        expect: "数量为0"
+        client.getKeys().getKeysByPattern("redis-manager:test:*").size() == 0
+    }
+
+
     def "测试Key过期操作"() {
+        def clientId = "default"
+        def key = "redis-manager:test:1"
+        def seconds = 200
+        def expireHttpRequest = delete("/redis/manager/{clientId}/{database}/keys/expire/{key}/{seconds}",
+                clientId, database, key, seconds)
+        def getKeyHttpRequest = get("/redis/manager/{clientId}/{database}/keys/{key}", clientId, database, key)
+
+        given: "设置key:(redis-manager:test:1)过期时间为200"
+
+        def result = mockMvc
+                .perform(expireHttpRequest)
+                .andExpect(status().is(200))
+                .andReturn()
+                .getResponse()
+                .getContentAsString()
+        when: "设置成功"
+        JSON.parseObject(result).getBoolean("result")
+
+        then: "获取key信息"
+
+        def keyInfo = mockMvc
+                .perform(getKeyHttpRequest)
+                .andExpect(status().is(200))
+                .andReturn()
+                .getResponse()
+                .getContentAsString()
+        def ttl = JSON.parseObject(keyInfo).getJSONArray("result").getJSONObject(0).getInteger("ttl")
+        expect: "key过期时间大于-1小于等于200"
+        ttl > -1
+        ttl <= 200
+
+    }
+
+    def "测试Key不过期操作"() {
         def clientId = "default"
         def key = "redis-manager:test:1"
         def seconds = -1

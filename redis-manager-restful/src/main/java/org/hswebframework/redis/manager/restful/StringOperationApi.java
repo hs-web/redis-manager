@@ -26,7 +26,7 @@ public class StringOperationApi {
                 .get());
     }
 
-    @PutMapping("/{clientId}/{database}/set/{key}")
+    @PatchMapping("/{clientId}/{database}/set/{key}")
     public ResponseMessage<Void> setValue(@PathVariable String clientId,
                                           @PathVariable int database,
                                           @PathVariable String key,

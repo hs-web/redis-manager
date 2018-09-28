@@ -85,7 +85,6 @@ class HashOperationApiTest extends AbstractTestSupport {
                 .getContentAsString()
         when: "返回成功"
         JSON.parseObject(result).getInteger("status") == 200;
-        Thread.sleep(1000)
         then: "获取hash key data-10是否存在"
         def client = repository.getRedissonClient(clientId, database);
         expect: "data-10已被删除"
