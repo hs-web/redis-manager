@@ -23,7 +23,7 @@ public class RedisClient {
     private String name;
 
     //客户端分组
-    private String group;
+    private String group="default";
 
     //备注
     private String comments;

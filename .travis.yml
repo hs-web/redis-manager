@@ -7,7 +7,7 @@ service:
 before_script:
     - sudo redis-server /etc/redis/redis.conf --port 6379
 script:
-  - mvn -Dcodec.lib.dir=${PWD}/lib/ test
+  - mvn -Dredis.manager.codec.lib.dir=${PWD}/lib/ test
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 cache:

@@ -13,6 +13,8 @@ public interface RedisClientRepository {
 
     RedisClient saveOrUpdate(RedisClient client);
 
+    RedisClient remove(String clientId);
+
     List<RedisClient> allClients();
 
     RedisClient findById(String clientId);

@@ -13,6 +13,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InMemoryRedisClientRepository extends AbstractRedisClientRepository {
 
+
+    @Override
+    public RedisClient remove(String clientId) {
+        RedisClient client = repository.remove(clientId);
+        Cache cache = clientCache.get(clientId);
+        if (null != cache) {
+            cache.close();
+        }
+        return client;
+    }
+
     @Getter
     @Setter
     private Map<String, RedisClient> repository = new ConcurrentHashMap<>();

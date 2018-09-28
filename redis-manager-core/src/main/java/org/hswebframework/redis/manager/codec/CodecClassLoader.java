@@ -1,7 +1,6 @@
 package org.hswebframework.redis.manager.codec;
 
 import io.vavr.API;
-import io.vavr.CheckedFunction1;
 
 import java.io.File;
 import java.net.URL;
@@ -11,7 +10,7 @@ import java.util.stream.Stream;
 public class CodecClassLoader extends URLClassLoader {
 
     public CodecClassLoader(File... urls) {
-        super(Stream.of(urls)
+        this(Stream.of(urls)
                 .flatMap(API.unchecked(file -> {
                     if (file.isDirectory()) {
                         File[] children = file.listFiles();
@@ -24,12 +23,16 @@ public class CodecClassLoader extends URLClassLoader {
     }
 
     public CodecClassLoader(String... urls) {
-        super(Stream.of(urls)
+        this(Stream.of(urls)
                 .map(API.<String, URL>unchecked(URL::new))
                 .toArray(URL[]::new));
     }
 
     public CodecClassLoader(URL... urls) {
-        super(urls);
+        this(CodecClassLoader.class.getClassLoader(), urls);
+    }
+
+    public CodecClassLoader(ClassLoader parent, URL... urls) {
+        super(urls, parent);
     }
 }

@@ -25,17 +25,17 @@ import java.util.function.Supplier;
 @Slf4j
 public abstract class AbstractRedisClientRepository implements RedisClientRepository {
 
-    protected Map<String, Cache> clientMap = new ConcurrentHashMap<>();
+    protected Map<String, Cache> clientCache = new ConcurrentHashMap<>();
 
-    private ClassLoader classLoader;
+    protected ClassLoader classLoader;
 
     @SneakyThrows
     public AbstractRedisClientRepository() {
-        File file = new File("./lib");
+        File file = new File(System.getProperty("redis.manager.codec.lib.dir","./lib"));
         if (!file.exists()) {
             file.mkdir();
         }
-        classLoader = new CodecClassLoader(file.toURI().toURL());
+        classLoader = new CodecClassLoader(file);
     }
 
     @Override
@@ -44,7 +44,7 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
     }
 
     protected void updateCodec(String clientId, Map<String, RedisClient.CodecConfig> configMap) {
-        if (clientMap.get(clientId) != null) {
+        if (clientCache.get(clientId) != null) {
             getCache(clientId).reloadCodec(configMap);
         }
     }
@@ -52,13 +52,13 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
     protected Cache getCache(String id) {
         RedisClient client = findById(id);
         Objects.requireNonNull(client, "客户端不存在");
-        Cache cache = clientMap.get(id);
+        Cache cache = clientCache.get(id);
         if (cache == null || !cache.clientConf.equals(client)) {
             if (cache != null) {
                 cache.close();
             }
             cache = createCache(client);
-            clientMap.put(id, cache);
+            clientCache.put(id, cache);
         }
         return cache;
     }
@@ -71,7 +71,7 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
 
     @Override
     public Codec getCodec(String clientId, String key) {
-        return Optional.ofNullable(clientMap.get(clientId))
+        return Optional.ofNullable(clientCache.get(clientId))
                 .map(client -> client.getCodec(key))
                 .orElseThrow(NullPointerException::new);
     }
