@@ -7,30 +7,27 @@ import org.redisson.codec.KryoCodec;
 import org.redisson.codec.SerializationCodec;
 
 public enum CodecType {
-    string(){
+    string() {
         @Override
         public Codec createCodec(ClassLoader classLoader) {
             return StringCodec.INSTANCE;
         }
     },
-    jdk(){
+    jdk() {
         @Override
         public Codec createCodec(ClassLoader classLoader) {
             return new SerializationCodec(classLoader);
         }
     },
-    fst(){
+    fst() {
         @Override
         public Codec createCodec(ClassLoader classLoader) {
-
-            return null;//new FstCodec(classLoader);
+            return new FstCodec(classLoader);
         }
     },
-    kryo(){
+    kryo() {
         @Override
         public Codec createCodec(ClassLoader classLoader) {
-
-
             return new KryoCodec(classLoader);
         }
     };

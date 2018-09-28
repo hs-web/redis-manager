@@ -16,6 +16,26 @@
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>zero-allocation-hashing</artifactId>
+            <version>0.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.ruedigermoeller</groupId>
+            <artifactId>fst</artifactId>
+            <version>2.55</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.esotericsoftware/kryo -->
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>4.0.2</version>
+        </dependency>
+
         <dependency>
             <groupId>io.vavr</groupId>
             <artifactId>vavr</artifactId>
