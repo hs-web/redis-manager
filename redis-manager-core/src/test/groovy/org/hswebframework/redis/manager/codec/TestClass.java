@@ -3,6 +3,7 @@ package org.hswebframework.redis.manager.codec;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serializable;
 
@@ -13,6 +14,7 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @Getter
 @Setter
+@ToString
 public class TestClass implements Serializable {
     private String id;
 

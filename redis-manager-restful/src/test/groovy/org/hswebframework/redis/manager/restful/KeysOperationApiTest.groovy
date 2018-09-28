@@ -15,9 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author zhouhao
  * @since 1.0.0
  */
-@Title("redis key相关操作测试")
-@Subject(KeysOperationApi)
-
 class KeysOperationApiTest extends AbstractTestSupport {
 
     def database = 10;
