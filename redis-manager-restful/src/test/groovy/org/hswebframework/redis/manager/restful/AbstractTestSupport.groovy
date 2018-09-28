@@ -20,7 +20,7 @@ import spock.lang.Specification
 @WebAppConfiguration
 @ContextConfiguration
 @SpringBootTest(classes = [TestApplication.class], properties = ["classpath:application.yml"])
-class AbstractTest extends Specification {
+class AbstractTestSupport extends Specification {
     @Autowired
     protected ConfigurableApplicationContext context;
 
@@ -35,8 +35,8 @@ class AbstractTest extends Specification {
         repository = context.getBean(RedisClientRepository.class);
     }
 
-    def "Test"() {
-        expect:
+    def "启动测试类"() {
+        expect: "启动正常"
         context != null
         mockMvc != null
         repository != null

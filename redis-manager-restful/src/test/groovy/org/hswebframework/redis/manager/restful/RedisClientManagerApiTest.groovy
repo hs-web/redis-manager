@@ -2,18 +2,7 @@ package org.hswebframework.redis.manager.restful
 
 import com.alibaba.fastjson.JSON
 import org.hswebframework.redis.manager.RedisClient
-import org.hswebframework.redis.manager.RedisClientRepository
-import org.hswebframework.redis.manager.TestApplication
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.http.MediaType
-import org.springframework.test.context.ContextConfiguration
-import org.springframework.test.context.web.WebAppConfiguration
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.setup.MockMvcBuilders
-import spock.lang.Shared
-import spock.lang.Specification
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
@@ -23,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author zhouhao
  * @since 1.0.0
  */
-class RedisClientManagerApiTest extends AbstractTest {
+class RedisClientManagerApiTest extends AbstractTestSupport {
 
     def "Test Query"() {
         setup:

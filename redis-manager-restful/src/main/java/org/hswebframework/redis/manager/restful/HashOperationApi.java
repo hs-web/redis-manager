@@ -51,6 +51,7 @@ public class HashOperationApi {
                                         @PathVariable int database,
                                         @PathVariable String key,
                                         @PathVariable String field) {
+
         return ResponseMessage.ok(repository.getRedissonClient(clientId, database)
                 .getMap(key, repository.getCodec(clientId, key))
                 .remove(field));

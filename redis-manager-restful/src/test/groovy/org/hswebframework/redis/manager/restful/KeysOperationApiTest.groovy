@@ -13,73 +13,84 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author zhouhao
  * @since 1.0.0
  */
-class KeysOperationApiTest extends AbstractTest {
+class KeysOperationApiTest extends AbstractTestSupport {
 
-    @Shared
     def database = 10;
 
-    @Shared
     def total = 1000;
 
     def setup() {
-        def client = repository.getRedissonClient("default", 10);
+        def client = repository.getRedissonClient("default", database);
         for (i in 1..total) {
             client.getBucket("redis-manager:test:" + i).set(i, 100, TimeUnit.SECONDS);
         }
     }
 
     def cleanup() {
-        def client = repository.getRedissonClient("default", 10);
+        def client = repository.getRedissonClient("default", database);
         long total = client.keys.deleteByPattern("redis-manager:test:*");
         println("delete keys ${total}")
     }
 
-    def "Test Expire Key"() {
-        setup:
+    def "测试Key过期操作"() {
+        def clientId = "default"
+        def key = "redis-manager:test:1"
+        def seconds = -1
+        def expireHttpRequest = delete("/redis/manager/{clientId}/{database}/keys/expire/{key}/{seconds}",
+                clientId, database, key, seconds)
+        def getKeyHttpRequest = get("/redis/manager/{clientId}/{database}/keys/{key}", clientId, database, key)
+
+        given: "设置key:(redis-manager:test:1)过期时间为-1"
+
         def result = mockMvc
-                .perform(delete("/redis/manager/{clientId}/{database}/keys/expire/{key}/{seconds}",
-                "default",
-                database,
-                "redis-manager:test:1",
-                -1))
+                .perform(expireHttpRequest)
                 .andExpect(status().is(200))
                 .andReturn()
                 .getResponse()
                 .getContentAsString()
-        def success = JSON.parseObject(result).getBoolean("result");
+        when: "设置成功"
+        JSON.parseObject(result).getBoolean("result")
+
+        then: "获取key信息"
+
         def keyInfo = mockMvc
-                .perform(get("/redis/manager/{clientId}/{database}/keys/redis-manager:test:1", "default", database))
+                .perform(getKeyHttpRequest)
                 .andExpect(status().is(200))
                 .andReturn()
                 .getResponse()
                 .getContentAsString()
         def ttl = JSON.parseObject(keyInfo).getJSONArray("result").getJSONObject(0).getInteger("ttl");
-        expect:
-        success
-        ttl == -1;
+        expect: "key过期时间为-1"
+        ttl == -1
 
     }
 
-    def "Test Get Keys"() {
-        setup:
+    def "测试获取KEY"() {
+        given: "根据pattern:(redis-manager:test:*)获取全部key"
+        //获取全部,返回200认为成功
+        mockMvc.perform(get("/redis/manager/default/{database}/keys", database)).andExpect(status().is(200))
+        //根据pattern获取
         def result = mockMvc
-                .perform(get("/redis/manager/default/{database}/keys/redis-manager:test:*", database))
+                .perform(get("/redis/manager/default/{database}/keys/{pattern}", database, "redis-manager:test:*"))
                 .andExpect(status().is(200))
                 .andReturn()
                 .getResponse()
                 .getContentAsString()
         def resultSize = JSON.parseObject(result).getJSONArray("result").size();
+        when: "获取成功"
+        resultSize > 0
 
-        result = mockMvc
+        then: "根据pattern:(redis-manager:test:*)获取总数"
+        def totalResult = mockMvc
                 .perform(get("/redis/manager/default/{database}/keys/total", database))
                 .andExpect(status().is(200))
                 .andReturn()
                 .getResponse()
                 .getContentAsString()
-        def totalResult = JSON.parseObject(result).getLong("result");
+        def total = JSON.parseObject(totalResult).getLong("result");
 
-        expect:
-        totalResult == this.total
+        expect: "获取成功,数量一致"
+        total == this.total
         resultSize == this.total
     }
 }
