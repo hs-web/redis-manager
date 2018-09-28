@@ -1,14 +1,12 @@
 package org.hswebframework.redis.manager.restful.mode;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class KeyModel {
 
     private String key;
@@ -16,4 +14,5 @@ public class KeyModel {
     private String type;
 
     private long ttl;
+
 }

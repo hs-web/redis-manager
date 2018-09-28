@@ -114,7 +114,11 @@ public class KeysOperationApi {
                         RScript.ReturnType.MULTI,
                         Collections.emptyList(),
                         key);
-        return new KeyModel(key, typeAndTTl.get(0), Long.valueOf(String.valueOf(typeAndTTl.get(1))));
+        return KeyModel.builder()
+                .key(key)
+                .type(typeAndTTl.get(0))
+                .ttl(Long.valueOf(String.valueOf(typeAndTTl.get(1))))
+                .build();
     }
 
 }
