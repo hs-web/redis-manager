@@ -2,8 +2,6 @@ package org.hswebframework.redis.manager
 
 import io.netty.buffer.ByteBuf
 import org.hswebframework.redis.manager.codec.CodecType
-import org.hswebframework.web.bean.FastBeanCopier
-import org.redisson.api.RBucket
 import org.redisson.client.codec.Codec
 import org.redisson.client.handler.State
 import spock.lang.Specification
@@ -13,13 +11,16 @@ class InMemoryRedisClientRepositoryTest extends Specification {
     def repository = new InMemoryRedisClientRepository();
 
     def setup() {
-        repository.getRepository()
-                .put("test", new RedisClient(name: "test",
+        repository.init();
+
+        repository.saveOrUpdate(new RedisClient(id: "test", name: "test",
                 group: "default",
                 comments: "test",
                 address: "redis://localhost:6379",
                 password: null,
                 codecConfig: ["test-data": new RedisClient.CodecConfig(keyCodec: CodecType.string, valueCodec: CodecType.fst)]))
+
+
     }
 
     def cleanup() {
@@ -63,7 +64,7 @@ class InMemoryRedisClientRepositoryTest extends Specification {
         bucket.set(testBean)
         expect: "设置成功"
         bucket.get() != null
-        bucket.get()==testBean
+        bucket.get() == testBean
 
     }
 
@@ -78,5 +79,14 @@ class InMemoryRedisClientRepositoryTest extends Specification {
         "test"   | 3        | true
         "test"   | 4        | true
         "test"   | 5        | true
+        "test"   | 6        | true
+        "test"   | 7        | true
+        "test"   | 8        | true
+        "test"   | 9        | true
+        "test"   | 10       | true
+        "test"   | 11       | true
+        "test"   | 12       | true
+        "test"   | 13       | true
+        "test"   | 14       | true
     }
 }

@@ -31,7 +31,7 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
 
     @SneakyThrows
     public AbstractRedisClientRepository() {
-        File file = new File(System.getProperty("redis.manager.codec.lib.dir","./lib"));
+        File file = new File(System.getProperty("redis.manager.codec.lib.dir", "./lib"));
         if (!file.exists()) {
             file.mkdir();
         }
@@ -98,7 +98,7 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
         public void close() {
             for (Integer database : initDatabases) {
                 try {
-                    getClient(databases).shutdown();
+                    getClient(database).shutdown();
                 } catch (Exception e) {
                     log.error("停止redis[{}]:[{}]客户端失败", clientConf, database, e);
                 }
@@ -125,7 +125,10 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
             firstDatabaseConfig.useSingleServer()
                     .setPassword(redisClient.getPassword())
                     .setAddress(redisClient.getAddress())
+                    .setConnectionMinimumIdleSize(2)
+                    .setConnectionPoolSize(32)
                     .setDatabase(0);
+            initDatabases.add(0);
             RedissonClient redissonClient = Redisson.create(firstDatabaseConfig);
             clients.add(0, () -> redissonClient);
             List<Object> data = redissonClient
@@ -136,7 +139,7 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
                             RScript.ReturnType.MULTI);
             this.databases = Integer.parseInt(String.valueOf(data.get(1)));
 
-            for (int i = 1; i < this.databases; i++) {
+            for (int i = 1; i < this.databases - 1; i++) {
                 int fi = i;
                 @SuppressWarnings("all")
                 Supplier<RedissonClient> supplier = Lazy.val(() -> {
@@ -144,6 +147,9 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
                     config.useSingleServer()
                             .setPassword(redisClient.getPassword())
                             .setAddress(redisClient.getAddress())
+                            .setConnectionMinimumIdleSize(2)
+                            .setConnectionPoolSize(32)
+                            .setConnectTimeout(20000)
                             .setDatabase(fi);
                     RedissonClient client = Redisson.create(config);
                     initDatabases.add(fi);
