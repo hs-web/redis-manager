@@ -139,7 +139,7 @@ public abstract class AbstractRedisClientRepository implements RedisClientReposi
                             RScript.ReturnType.MULTI);
             this.databases = Integer.parseInt(String.valueOf(data.get(1)));
 
-            for (int i = 1; i < this.databases - 1; i++) {
+            for (int i = 1; i <= this.databases - 1; i++) {
                 int fi = i;
                 @SuppressWarnings("all")
                 Supplier<RedissonClient> supplier = Lazy.val(() -> {

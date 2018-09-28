@@ -4,10 +4,12 @@ import io.netty.buffer.ByteBuf
 import org.hswebframework.redis.manager.codec.CodecType
 import org.redisson.client.codec.Codec
 import org.redisson.client.handler.State
+import spock.lang.Shared
 import spock.lang.Specification
 
 class InMemoryRedisClientRepositoryTest extends Specification {
 
+    @Shared
     def repository = new InMemoryRedisClientRepository();
 
     def setup() {
@@ -24,7 +26,7 @@ class InMemoryRedisClientRepositoryTest extends Specification {
     }
 
     def cleanup() {
-        repository.remove("test")
+       // repository.remove("test")
     }
 
     def doEncodeDecode(Codec c, Object o) {
@@ -88,5 +90,8 @@ class InMemoryRedisClientRepositoryTest extends Specification {
         "test"   | 12       | true
         "test"   | 13       | true
         "test"   | 14       | true
+        "test"   | 15       | true
+
+
     }
 }
