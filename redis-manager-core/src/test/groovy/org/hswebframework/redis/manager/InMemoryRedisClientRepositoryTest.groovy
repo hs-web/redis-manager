@@ -26,7 +26,7 @@ class InMemoryRedisClientRepositoryTest extends Specification {
     }
 
     def cleanup() {
-       // repository.remove("test")
+        repository.remove("test")
     }
 
     def doEncodeDecode(Codec c, Object o) {
