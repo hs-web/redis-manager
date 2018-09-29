@@ -1,5 +1,6 @@
 package org.hswebframework.redis.manager
 
+import com.alibaba.fastjson.JSON
 import io.netty.buffer.ByteBuf
 import org.hswebframework.redis.manager.codec.CodecType
 import org.redisson.client.codec.Codec
@@ -48,7 +49,7 @@ class InMemoryRedisClientRepositoryTest extends Specification {
 
     }
 
-    def initRedissonClientSuccess(String clientId, int database) {
+    boolean initRedissonClientSuccess(String clientId, int database) {
         return repository.getRedissonClient(clientId, database) != null;
     }
 
@@ -57,16 +58,18 @@ class InMemoryRedisClientRepositoryTest extends Specification {
                 .getBucket("test-data", repository.getCodec("test", "test-data"));
 
         given: "从自定义的jar中初始化类并放入redis"
-        def testBean = repository.classLoader.loadClass("org.hswebframework.redis.manager.beans.TestBean");
-        testBean.with {
-            id: "test"
-            name: "test"
-            age: 20
+        def beanClass = repository.classLoader.loadClass("org.hswebframework.redis.manager.beans.TestBean");
+        def bean = beanClass.newInstance()
+        bean.with {
+            id = "test"
+            name = "test"
+            age = 20
         }
-        bucket.set(testBean)
+        bucket.set(bean)
+        print(JSON.toJSONString(bean))
         expect: "设置成功"
         bucket.get() != null
-        bucket.get() == testBean
+        bucket.get() != bean
 
     }
 
@@ -91,7 +94,5 @@ class InMemoryRedisClientRepositoryTest extends Specification {
         "test"   | 13       | true
         "test"   | 14       | true
         "test"   | 15       | true
-
-
     }
 }
