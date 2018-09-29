@@ -3,10 +3,12 @@ package org.hswebframework.redis.manager
 import com.alibaba.fastjson.JSON
 import io.netty.buffer.ByteBuf
 import org.hswebframework.redis.manager.codec.CodecType
+import org.redisson.Redisson
 import org.redisson.client.codec.Codec
 import org.redisson.client.handler.State
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class InMemoryRedisClientRepositoryTest extends Specification {
 
@@ -17,13 +19,16 @@ class InMemoryRedisClientRepositoryTest extends Specification {
     def redisClientId = "default";
 
     def setup() {
-        repository.init();
-        repository.saveOrUpdate(new RedisClient(id: redisClientId, name: "test",
+
+        repository.repository
+                .put(redisClientId, new RedisClient(name: "test",
                 group: "default",
                 comments: "测试",
                 address: System.getProperty("redis.manager.repository." + redisClientId + ".address", "redis://localhost:6379"),
                 password: System.getProperty("redis.manager.repository." + redisClientId + ".password", null),
                 codecConfig: ["test-data": new RedisClient.CodecConfig(keyCodec: CodecType.string, valueCodec: CodecType.fst)]))
+
+        repository.init();
     }
 
     def cleanup() {
@@ -36,21 +41,21 @@ class InMemoryRedisClientRepositoryTest extends Specification {
         return decode == o
     }
 
-    def "测试redis客户端获取和删除"() {
-        given: "获取配置的客户端"
-        def redisClient = repository.findById(redisClientId);
-        when: "获取成功"
-        redisClient != null
-        then: "删除客户端"
-        def old = repository.remove(redisClientId);
-        expect: "删除成功"
-        old != null
-        repository.findById("test") == null
 
+    def "测试配置新增删除查询"() {
+        given: "保存一个没有设置id的客户端"
+        def client = repository.saveOrUpdate(new RedisClient(name: "save-not-set-id"))
+        when: "自动生成了id"
+        client.id != null
+        then: "删除保存的客户端"
+        repository.remove(client.id)
+        def old = repository.findById(client.id);
+        expect: "删除成功"
+        old == null
     }
 
     boolean initRedissonClientSuccess(String clientId, int database) {
-        return repository.getRedissonClient(clientId, database) != null;
+        return ((Redisson) repository.getRedissonClient(clientId, database)) != null
     }
 
     def "测试自定义序列化"() {
@@ -74,7 +79,7 @@ class InMemoryRedisClientRepositoryTest extends Specification {
     }
 
     def "测试初始化redis客户端"() {
-        given: "初始化客户端"
+        expect: "初始化客户端"
         initRedissonClientSuccess(clientId, database) == success
         where: "初始化结果"
         clientId      | database | success

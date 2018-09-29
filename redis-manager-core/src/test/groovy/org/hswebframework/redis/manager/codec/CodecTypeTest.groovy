@@ -27,17 +27,17 @@ class CodecTypeTest extends Specification {
     def doEncodeDecode(Codec c, Object o) {
         ByteBuf buf = c.getValueEncoder().encode(o)
         def decode = c.getValueDecoder().decode(buf, new State(false))
-        return decode == o
+        return decode
     }
 
     def "测试序列化"() {
-        given: "准备执行"
-        doEncodeDecode(codec, data) == success
-        where: "序列化,反序列成功"
-        codec  | data | success
-        string | bean | true
-        fst    | bean | true
-        jdk    | bean | true
-        kryo   | bean | true
+        expect: "准备执行"
+        doEncodeDecode(codec, data) == res
+        where: "序列化,反序列结果"
+        codec  | data | res
+        string | bean | bean.toString()
+        fst    | bean | bean
+        jdk    | bean | bean
+        kryo   | bean | bean
     }
 }
