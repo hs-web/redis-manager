@@ -52,7 +52,7 @@ public class KeysOperationApi {
     @GetMapping("/{clientId}/{database}/keys")
     @Authorize(action = {"keys", "*"}, logical = Logical.OR)
     @SuppressWarnings("all")
-    @ApiOperation("获取指定数量的keys")
+    @ApiOperation("获取全部key")
     public ResponseMessage<List<KeyModel>> keys(@PathVariable String clientId,
                                                 @PathVariable int database) {
         return ok(StreamSupport.stream(getRkeys(clientId, database)
@@ -65,7 +65,7 @@ public class KeysOperationApi {
     @GetMapping("/{clientId}/{database}/keys/{pattern:.*}")
     @Authorize(action = {"keys", "*"}, logical = Logical.OR)
     @SuppressWarnings("all")
-    @ApiOperation("获取指定数量以及规则的keys")
+    @ApiOperation("获取满足规则的key")
     public ResponseMessage<List<KeyModel>> keysByPattern(@PathVariable String clientId,
                                                          @PathVariable int database,
                                                          @PathVariable String pattern) {
