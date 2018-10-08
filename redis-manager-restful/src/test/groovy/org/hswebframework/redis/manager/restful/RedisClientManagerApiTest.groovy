@@ -2,6 +2,7 @@ package org.hswebframework.redis.manager.restful
 
 import com.alibaba.fastjson.JSON
 import org.hswebframework.redis.manager.RedisClient
+import org.hswebframework.redis.manager.restful.model.RedisInfo
 import org.springframework.http.MediaType
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -66,5 +67,21 @@ class RedisClientManagerApiTest extends AbstractTestSupport {
         println database
         database != null
         database != 0
+    }
+
+    def "Test getInfo"() {
+        setup:
+        def result = mockMvc
+                .perform(get("/redis/manager/default/info"))
+                .andExpect(status().is(200))
+                .andReturn()
+                .getResponse()
+                .getContentAsString()
+        def info = JSON.parseObject(result)
+                .getJSONObject("result")
+                .toJavaObject(RedisInfo.class)
+        expect:
+        println info
+        info != null
     }
 }

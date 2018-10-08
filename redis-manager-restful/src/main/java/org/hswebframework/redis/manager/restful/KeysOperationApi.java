@@ -3,7 +3,7 @@ package org.hswebframework.redis.manager.restful;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.hswebframework.redis.manager.RedisClientRepository;
-import org.hswebframework.redis.manager.restful.mode.KeyModel;
+import org.hswebframework.redis.manager.restful.model.KeyModel;
 import org.hswebframework.web.authorization.annotation.Authorize;
 import org.hswebframework.web.authorization.annotation.Logical;
 import org.hswebframework.web.controller.message.ResponseMessage;

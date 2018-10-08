@@ -1,4 +1,4 @@
-package org.hswebframework.redis.manager.restful.mode;
+package org.hswebframework.redis.manager.restful.model;
 
 import lombok.*;
 
