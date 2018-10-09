@@ -17,7 +17,7 @@ public class StringOperationApi {
     @Autowired
     private RedisClientRepository repository;
 
-    @GetMapping("/{clientId}/{database}/get/{key}")
+    @GetMapping("/{clientId}/{database}/get/{key:.*}")
     public ResponseMessage<Object> getValue(@PathVariable String clientId,
                                             @PathVariable int database,
                                             @PathVariable String key) {
@@ -26,7 +26,7 @@ public class StringOperationApi {
                 .get());
     }
 
-    @PatchMapping("/{clientId}/{database}/set/{key}")
+    @PatchMapping("/{clientId}/{database}/set/{key:.*}")
     public ResponseMessage<Void> setValue(@PathVariable String clientId,
                                           @PathVariable int database,
                                           @PathVariable String key,
